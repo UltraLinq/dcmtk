@@ -186,7 +186,6 @@ static OFCondition
 get_association_parameter(void *paramAddress,
   DUL_DATA_TYPE paramType, size_t paramLength,
   DUL_DATA_TYPE outputType, void *outputAddress, size_t outputLength);
-static void setTCPBufferLength(int sock);
 static OFCondition checkNetwork(PRIVATE_NETWORKKEY ** networkKey);
 static OFCondition checkAssociation(PRIVATE_ASSOCIATIONKEY ** association);
 static OFString dump_presentation_ctx(LST_HEAD ** l);
@@ -1833,9 +1832,8 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
         return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
     }
 #endif
-    setTCPBufferLength(sock);
 
-#ifndef DONT_DISABLE_NAGLE_ALGORITHM
+#if defined (DCMTK_DISABLE_NAGLE_ALGORITHM)
     /*
      * Disable the Nagle algorithm.
      * This provides a 2-4 times performance improvement (WinNT4/SP4, 100Mbit/s Ethernet).
@@ -1859,7 +1857,7 @@ receiveTransportConnectionTCP(PRIVATE_NETWORKKEY ** network,
             return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
         }
     }
-#endif // DONT_DISABLE_NAGLE_ALGORITHM
+#endif // DCMTK_DISABLE_NAGLE_ALGORITHM
 
     // create string containing numerical IP address.
     OFString client_dns_name;
@@ -2280,57 +2278,6 @@ get_association_parameter(void *paramAddress,
     }
     return EC_Normal;
 }
-
-
-/* setTCPBufferLength
-**
-** Purpose:
-**      Initialize the length of the buffer.
-**
-** Parameter Dictionary:
-**      sock  Socket descriptor.
-**
-** Return Values:
-**      None
-**
-**
-** Notes:
-**
-** Algorithm:
-**      Description of the algorithm (optional) and any other notes.
-*/
-static void
-setTCPBufferLength(int sock)
-{
-    char *TCPBufferLength;
-    int bufLen;
-
-    /*
-     * Use a 64K default socket buffer length, fitting the MTU size of the loopback device implementation
-     * in recent Linux kernel versions.
-     * Different environments, particularly slower networks may require different values for optimal
-     * performance.
-     */
-#ifdef HAVE_GUSI_H
-    /* GUSI always returns an error for setsockopt(...) */
-#else
-    bufLen = 65536; // a socket buffer size of 64K gives best throughput for image transmission
-    if ((TCPBufferLength = getenv("TCP_BUFFER_LENGTH")) != NULL) {
-        if (sscanf(TCPBufferLength, "%d", &bufLen) != 1) {
-            DCMNET_WARN("DUL: cannot parse environment variable TCP_BUFFER_LENGTH=" << TCPBufferLength);
-        }
-    }
-#if defined(SO_SNDBUF) && defined(SO_RCVBUF)
-    (void) setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *) &bufLen, sizeof(bufLen));
-    (void) setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *) &bufLen, sizeof(bufLen));
-#else
-    DCMNET_WARN("DULFSM: setTCPBufferLength: "
-        "cannot set TCP buffer length socket option: "
-        "code disabled because SO_SNDBUF and SO_RCVBUF constants are unknown");
-#endif // SO_SNDBUF and SO_RCVBUF
-#endif // HAVE_GUSI_H
-}
-
 
 /* DUL_DumpParams
 **
