@@ -278,7 +278,6 @@ defragmentTCP(DcmTransportConnection *connection, DUL_BLOCKOPTIONS block, time_t
 
 static OFString dump_pdu(const char *type, void *buffer, unsigned long length);
 
-static void setTCPBufferLength(int sock);
 OFCondition
 translatePresentationContextList(LST_HEAD ** internalList,
                                  LST_HEAD ** SCUSCPRoleList,
@@ -2421,9 +2420,8 @@ requestAssociationTCP(PRIVATE_NETWORKKEY ** network,
           return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
         }
 #endif
-        setTCPBufferLength(s);
 
-#ifndef DONT_DISABLE_NAGLE_ALGORITHM
+#if defined (DCMTK_DISABLE_NAGLE_ALGORITHM)
         /*
          * Disable the Nagle algorithm.
          * This provides a 2-4 times performance improvement (WinNT4/SP4, 100Mbit/s Ethernet).
@@ -2449,7 +2447,7 @@ requestAssociationTCP(PRIVATE_NETWORKKEY ** network,
               return makeDcmnetCondition(DULC_TCPINITERROR, OF_error, msg.c_str());
             }
         }
-#endif // DONT_DISABLE_NAGLE_ALGORITHM
+#endif // DCMTK_DISABLE_NAGLE_ALGORITHM
 
        DcmTransportLayerStatus tcsStatus;
        if (TCS_ok != (tcsStatus = (*association)->connection->clientSideHandshake()))
@@ -3699,60 +3697,6 @@ dump_pdu(const char *type, void *buffer, unsigned long length)
     str << OFStringStream_ends;
     OFSTRINGSTREAM_GETOFSTRING(str, ret)
     return ret;
-}
-
-
-
-/* setTCPBufferLength
-**
-** Purpose:
-**      This routine checks for the existence of an environment
-**      variable (TCP_BUFFER_LENGTH).  If that variable is defined (and
-**      is a legal integer), this routine sets the socket SNDBUF and RCVBUF
-**      variables to the value defined in TCP_BUFFER_LENGTH.
-**
-** Parameter Dictionary:
-**      sock            Socket descriptor (identifier)
-**
-** Return Values:
-**      None
-**
-** Notes:
-**
-** Algorithm:
-**      Description of the algorithm (optional) and any other notes.
-*/
-static void
-setTCPBufferLength(int sock)
-{
-    char *TCPBufferLength;
-    int bufLen;
-
-    /*
-     * Use a 64K default socket buffer length, fitting the MTU size of the loopback device implementation
-     * in recent Linux kernel versions.
-     * Different environments, particularly slower networks may require different values for optimal
-     * performance.
-     */
-#ifdef HAVE_GUSI_H
-    /* GUSI always returns an error for setsockopt(...) */
-#else
-    bufLen = 65536; // a socket buffer size of 64K gives best throughput for image transmission
-    if ((TCPBufferLength = getenv("TCP_BUFFER_LENGTH")) != NULL) {
-        if (sscanf(TCPBufferLength, "%d", &bufLen) != 1)
-        {
-            DCMNET_WARN("DULFSM: cannot parse environment variable TCP_BUFFER_LENGTH=" << TCPBufferLength);
-        }
-    }
-#if defined(SO_SNDBUF) && defined(SO_RCVBUF)
-    (void) setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *) &bufLen, sizeof(bufLen));
-    (void) setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *) &bufLen, sizeof(bufLen));
-#else
-     DCMNET_WARN("DULFSM: setTCPBufferLength: "
-            "cannot set TCP buffer length socket option: "
-            "code disabled because SO_SNDBUF and SO_RCVBUF constants are unknown");
-#endif // SO_SNDBUF and SO_RCVBUF
-#endif // HAVE_GUSI_H
 }
 
 /* translatePresentationContextList
