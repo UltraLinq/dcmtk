@@ -37,6 +37,10 @@ DJDecoderSpectralSelection::~DJDecoderSpectralSelection()
 {
 }
 
+OFBool DJDecoderSpectralSelection::isJPEG2000() const
+{
+	return OFFalse;
+}
 
 E_TransferSyntax DJDecoderSpectralSelection::supportedTransferSyntax() const
 {

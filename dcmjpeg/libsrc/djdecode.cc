@@ -23,13 +23,17 @@
 #include "dcmtk/dcmjpeg/djdecode.h"
 
 #include "dcmtk/dcmdata/dccodec.h"  /* for DcmCodecStruct */
-#include "dcmtk/dcmjpeg/djdecbas.h" 
+#include "dcmtk/dcmjpeg/djdecbas.h"
 #include "dcmtk/dcmjpeg/djdecext.h"
 #include "dcmtk/dcmjpeg/djdecsps.h"
 #include "dcmtk/dcmjpeg/djdecpro.h"
 #include "dcmtk/dcmjpeg/djdecsv1.h"
 #include "dcmtk/dcmjpeg/djdeclol.h"
 #include "dcmtk/dcmjpeg/djcparam.h"
+
+#if defined (WITH_OPENJPEG2)
+#  include "dcmtk/dcmjpeg/djdec2k.h"
+#endif // WITH_OPENJPEG2
 
 // initialization of static members
 OFBool DJDecoderRegistration::registered                  = OFFalse;
@@ -40,6 +44,8 @@ DJDecoderSpectralSelection *DJDecoderRegistration::decsps = NULL;
 DJDecoderProgressive *DJDecoderRegistration::decpro       = NULL;
 DJDecoderP14SV1 *DJDecoderRegistration::decsv1            = NULL;
 DJDecoderLossless *DJDecoderRegistration::declol          = NULL;
+DJDecoderJP2k *DJDecoderRegistration::dec2k				  = NULL;
+DJDecoderJP2kLossLess *DJDecoderRegistration::dec2kLossLess	= NULL;
 
 void DJDecoderRegistration::registerCodecs(
     E_DecompressionColorSpaceConversion pDecompressionCSConversion,
@@ -51,8 +57,8 @@ void DJDecoderRegistration::registerCodecs(
   {
     cp = new DJCodecParameter(
       ECC_lossyYCbCr, // ignored, compression only
-      pDecompressionCSConversion, 
-      pCreateSOPInstanceUID, 
+      pDecompressionCSConversion,
+      pCreateSOPInstanceUID,
       pPlanarConfiguration,
       predictor6WorkaroundEnable);
     if (cp)
@@ -81,6 +87,16 @@ void DJDecoderRegistration::registerCodecs(
       declol = new DJDecoderLossless();
       if (declol) DcmCodecList::registerCodec(declol, NULL, cp);
 
+#if defined (WITH_OPENJPEG2)
+      // JPEG 2K
+      dec2k = new DJDecoderJP2k();
+      if (dec2k) DcmCodecList::registerCodec(dec2k, NULL, cp);
+
+       // JPEG 2K LossLess
+      dec2kLossLess = new DJDecoderJP2kLossLess();
+      if (dec2kLossLess) DcmCodecList::registerCodec(dec2kLossLess, NULL, cp);
+#endif // WITH_OPENJPEG2
+
       registered = OFTrue;
     }
   }
@@ -102,8 +118,19 @@ void DJDecoderRegistration::cleanup()
     delete decsv1;
     DcmCodecList::deregisterCodec(declol);
     delete declol;
+
+#if defined (WITH_OPENJPEG2)
+    DcmCodecList::deregisterCodec (dec2k);
+    delete dec2k;
+
+    DcmCodecList::deregisterCodec (dec2kLossLess);
+    delete dec2kLossLess;
+#endif (WITH_OPENJPEG2)
+
     delete cp;
+
     registered = OFFalse;
+
 #ifdef DEBUG
     // not needed but useful for debugging purposes
     decbas = NULL;
@@ -113,6 +140,12 @@ void DJDecoderRegistration::cleanup()
     decsv1 = NULL;
     declol = NULL;
     cp     = NULL;
+
+#  if defined (WITH_OPENJPEG2)
+    dec2k = NULL;
+    dec2kLossLess = NULL;
+#  endif (WITH_OPENJPEG2)
+
 #endif
 
   }

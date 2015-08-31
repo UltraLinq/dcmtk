@@ -32,10 +32,12 @@
 #include "dcmtk/dcmnet/dstorscu.h"   /* for DcmStorageSCU */
 
 #include "dcmtk/dcmjpeg/djdecode.h"  /* for JPEG decoders */
+#include "dcmtk/dcmjpeg/djencode.h"  /* for JPEG encoders */
 #include "dcmtk/dcmjpls/djdecode.h"  /* for JPEG-LS decoders */
+#include "dcmtk/dcmjpls/djencode.h"  /* for JPEG-LS encoders */
 #include "dcmtk/dcmdata/dcrledrg.h"  /* for RLE decoder */
+#include "dcmtk/dcmdata/dcrleerg.h"  /* for RLE encoder */
 #include "dcmtk/dcmjpeg/dipijpeg.h"  /* for dcmimage JPEG plugin */
-
 
 #ifdef WITH_ZLIB
 #include <zlib.h>                    /* for zlibVersion() */
@@ -97,12 +99,18 @@ static char rcsid[] = "$dcmtk: " OFFIS_CONSOLE_APPLICATION " v"
 // make sure that everything is cleaned up properly
 static void cleanup()
 {
-    // deregister JPEG decoder
+    // deregister JPEG codecs
     DJDecoderRegistration::cleanup();
-    // deregister JPEG-LS decoder
+    DJEncoderRegistration::cleanup();
+
+    // deregister JPEG-LS codecs
     DJLSDecoderRegistration::cleanup();
-    // deregister RLE decoder
+    DJLSEncoderRegistration::cleanup();
+
+    // deregister RLE codecs
     DcmRLEDecoderRegistration::cleanup();
+    DcmRLEEncoderRegistration::cleanup();
+
 #ifdef DEBUG
     /* useful for debugging with dmalloc */
     dcmDataDict.clear();
@@ -151,6 +159,24 @@ int main(int argc, char *argv[])
     const char *opt_reportFilename = "";
 
     int paramCount = 0;
+
+    // register global JPEG decompression codecs
+    DJDecoderRegistration::registerCodecs();
+
+    // register global JPEG compression codecs
+    DJEncoderRegistration::registerCodecs();
+
+    // // register JPEG-LS decompression codecs
+    // DJLSDecoderRegistration::registerCodecs();
+
+    // // register JPEG-LS compression codecs
+    // DJLSEncoderRegistration::registerCodecs();
+
+    // // register RLE compression codec
+    // DcmRLEEncoderRegistration::registerCodecs();
+
+    // // register RLE decompression codec
+    // DcmRLEDecoderRegistration::registerCodecs();
 
     OFConsoleApplication app(OFFIS_CONSOLE_APPLICATION , "Simple DICOM storage SCU (sender)", rcsid);
     OFCommandLine cmd;
@@ -244,6 +270,7 @@ int main(int argc, char *argv[])
                 COUT << "- " << DJLSDecoderRegistration::getLibraryVersionString() << OFendl;
                 return EXITCODE_NO_ERROR;
             }
+
             if (cmd.findOption("--list-decoders"))
             {
                 app.printHeader(OFFalse /*print host identifier*/);
@@ -264,6 +291,7 @@ int main(int argc, char *argv[])
                 COUT << "- " << DcmXfer(EXS_JPEGLSLossless).getXferName() << OFendl;
                 COUT << "- " << DcmXfer(EXS_JPEGLSLossy).getXferName() << OFendl;
                 COUT << "- " << DcmXfer(EXS_RLELossless).getXferName() << OFendl;
+
                 return EXITCODE_NO_ERROR;
             }
         }
@@ -360,13 +388,6 @@ int main(int argc, char *argv[])
         cmd.getParam(1, opt_peer);
         app.checkParam(cmd.getParamAndCheckMinMax(2, opt_port, 1, 65535));
     }
-
-    // register JPEG decoder
-    DJDecoderRegistration::registerCodecs();
-    // register JPEG-LS decoder
-    DJLSDecoderRegistration::registerCodecs();
-    // register RLE decoder
-    DcmRLEDecoderRegistration::registerCodecs();
 
     /* print resource identifier */
     OFLOG_DEBUG(dcmsendLogger, rcsid << OFendl);

@@ -56,7 +56,6 @@ END_EXTERN_C
 #include "dcmtk/dcmdata/dcuid.h"     /* for dcmtk version name */
 #include "dcmtk/dcmdata/dcostrmz.h"  /* for dcmZlibCompressionLevel */
 
-#ifdef ON_THE_FLY_COMPRESSION
 #include "dcmtk/dcmjpeg/djdecode.h"  /* for JPEG decoders */
 #include "dcmtk/dcmjpeg/djencode.h"  /* for JPEG encoders */
 #include "dcmtk/dcmjpls/djdecode.h"  /* for JPEG-LS decoders */
@@ -64,7 +63,6 @@ END_EXTERN_C
 #include "dcmtk/dcmdata/dcrledrg.h"  /* for RLE decoder */
 #include "dcmtk/dcmdata/dcrleerg.h"  /* for RLE encoder */
 #include "dcmtk/dcmjpeg/dipijpeg.h"  /* for dcmimage JPEG plugin */
-#endif
 
 #ifdef WITH_OPENSSL
 #include "dcmtk/dcmtls/tlstrans.h"
@@ -357,7 +355,7 @@ int main(int argc, char *argv[])
         {
           app.printHeader(OFTrue /*print host identifier*/);
           COUT << OFendl << "External libraries used:";
-#if !defined(WITH_ZLIB) && !(ON_THE_FLY_COMPRESSION) && !defined(WITH_OPENSSL)
+#if !defined(WITH_ZLIB) && !defined(WITH_OPENSSL)
           COUT << " none" << OFendl;
 #else
           COUT << OFendl;
@@ -365,10 +363,10 @@ int main(int argc, char *argv[])
 #ifdef WITH_ZLIB
           COUT << "- ZLIB, Version " << zlibVersion() << OFendl;
 #endif
-#ifdef ON_THE_FLY_COMPRESSION
+
           COUT << "- " << DiJPEGPlugin::getLibraryVersionString() << OFendl;
           COUT << "- " << DJLSDecoderRegistration::getLibraryVersionString() << OFendl;
-#endif
+
 #ifdef WITH_OPENSSL
           COUT << "- " << OPENSSL_VERSION_TEXT << OFendl;
 #endif
@@ -782,7 +780,6 @@ int main(int argc, char *argv[])
       ++if_iter;
     }
 
-#ifdef ON_THE_FLY_COMPRESSION
     // register global JPEG decompression codecs
     DJDecoderRegistration::registerCodecs();
 
@@ -800,7 +797,6 @@ int main(int argc, char *argv[])
 
     // register RLE decompression codec
     DcmRLEDecoderRegistration::registerCodecs();
-#endif
 
     /* initialize network, i.e. create an instance of T_ASC_Network*. */
     OFCondition cond = ASC_initializeNetwork(NET_REQUESTOR, 0, opt_acse_timeout, &net);
@@ -1094,7 +1090,6 @@ int main(int argc, char *argv[])
       }
     }
 
-#ifdef ON_THE_FLY_COMPRESSION
     // deregister JPEG codecs
     DJDecoderRegistration::cleanup();
     DJEncoderRegistration::cleanup();
@@ -1106,7 +1101,6 @@ int main(int argc, char *argv[])
     // deregister RLE codecs
     DcmRLEDecoderRegistration::cleanup();
     DcmRLEEncoderRegistration::cleanup();
-#endif
 
 #ifdef DEBUG
     dcmDataDict.clear();  /* useful for debugging with dmalloc */
@@ -1536,9 +1530,7 @@ storeSCU(T_ASC_Association *assoc, const char *fname)
       << " -> " << netTransfer.getXferName());
   }
 
-#ifdef ON_THE_FLY_COMPRESSION
   dcmff.getDataset()->chooseRepresentation(netTransfer.getXfer(), NULL);
-#endif
 
   /* prepare the transmission of data */
   bzero(OFreinterpret_cast(char *, &req), sizeof(req));

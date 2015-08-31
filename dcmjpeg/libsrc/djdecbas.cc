@@ -37,6 +37,10 @@ DJDecoderBaseline::~DJDecoderBaseline()
 {
 }
 
+OFBool DJDecoderBaseline::isJPEG2000() const
+{
+	return OFFalse;
+}
 
 E_TransferSyntax DJDecoderBaseline::supportedTransferSyntax() const
 {

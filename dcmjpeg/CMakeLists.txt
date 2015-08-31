@@ -1,6 +1,10 @@
 # declare project
 PROJECT(dcmjpeg)
 
+IF(DCMTK_WITH_LIBOPENJPEG2)
+  INCLUDE_DIRECTORIES(${LIBOPENJPEG2_INCDIR})
+ENDIF(DCMTK_WITH_LIBOPENJPEG2)
+
 # recurse into subdirectories
 FOREACH(SUBDIR libsrc libijg8 libijg12 libijg16 apps include)
   ADD_SUBDIRECTORY(${SUBDIR})

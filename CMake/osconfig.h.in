@@ -875,6 +875,9 @@
 /* Define if the second argument to iconv() is const */
 #cmakedefine LIBICONV_SECOND_ARGUMENT_CONST @LIBICONV_SECOND_ARGUMENT_CONST@
 
+/* Define if we are compiling with libopenjpeg support */
+#cmakedefine WITH_OPENJPEG2
+
 /* Define if we are compiling with libpng support */
 #cmakedefine WITH_LIBPNG
 

@@ -17,12 +17,13 @@ ENDIF(WITH_OPENSSL)
 FOREACH(PROGRAM dcmrecv dcmsend echoscu findscu getscu movescu storescp storescu termscu)
   DCMTK_TARGET_LINK_MODULES(${PROGRAM} dcmnet dcmdata oflog ofstd)
 ENDFOREACH(PROGRAM)
+
 FOREACH(PROGRAM echoscu findscu storescp storescu)
   DCMTK_TARGET_LINK_MODULES(${PROGRAM} dcmtls)
 ENDFOREACH(PROGRAM)
 
 # uncomment the following line if "storescu" is compiled with ON_THE_FLY_COMPRESSION defined
-#DCMTK_TARGET_LINK_MODULES(storescu dcmjpls dcmjpeg dcmimage)
+DCMTK_TARGET_LINK_MODULES(storescu dcmjpls dcmjpeg dcmimage)
 
 # "dcmsend" always needs compression support
 DCMTK_TARGET_LINK_MODULES(dcmsend dcmjpls dcmjpeg dcmimage)

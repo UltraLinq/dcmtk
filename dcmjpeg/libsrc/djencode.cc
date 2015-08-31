@@ -31,6 +31,10 @@
 #include "dcmtk/dcmjpeg/djenclol.h"
 #include "dcmtk/dcmjpeg/djcparam.h"
 
+#if defined (WITH_OPENJPEG2)
+#  include "dcmtk/dcmjpeg/djenc2k.h"
+#endif // WITH_OPENJPEG2
+
 // initialization of static members
 OFBool DJEncoderRegistration::registered                  = OFFalse;
 DJCodecParameter *DJEncoderRegistration::cp               = NULL;
@@ -40,6 +44,8 @@ DJEncoderSpectralSelection *DJEncoderRegistration::encsps = NULL;
 DJEncoderProgressive *DJEncoderRegistration::encpro       = NULL;
 DJEncoderP14SV1 *DJEncoderRegistration::encsv1            = NULL;
 DJEncoderLossless *DJEncoderRegistration::enclol          = NULL;
+DJEncoder2K *DJEncoderRegistration::enc2K				  = NULL;
+DJEncoder2KLossLess *DJEncoderRegistration::enc2KLoL	  = NULL;
 
 void DJEncoderRegistration::registerCodecs(
     E_CompressionColorSpaceConversion pCompressionCSConversion,
@@ -120,6 +126,16 @@ void DJEncoderRegistration::registerCodecs(
       // lossless JPEG
       enclol = new DJEncoderLossless();
       if (enclol) DcmCodecList::registerCodec(enclol, NULL, cp);
+
+#if defined (WITH_OPENJPEG2)
+       // JPEG 2K
+      enc2K = new DJEncoder2K();
+      if (enc2K) DcmCodecList::registerCodec(enc2K, NULL, cp);
+
+       // JPEG 2K Lossy
+      enc2KLoL = new DJEncoder2KLossLess();
+      if (enc2KLoL) DcmCodecList::registerCodec(enc2KLoL, NULL, cp);
+#endif // WITH_OPENJPEG2
 
       registered = OFTrue;
     }

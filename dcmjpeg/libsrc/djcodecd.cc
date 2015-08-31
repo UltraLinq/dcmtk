@@ -35,6 +35,64 @@
 #include "dcmtk/dcmjpeg/djcparam.h"  /* for class DJCodecParameter */
 #include "dcmtk/dcmjpeg/djdecabs.h"  /* for class DJDecoder */
 
+static char*
+pack_fragments (char** ppbuf, size_t* pbuflen, DcmPixelSequence* pseq) {
+    assert (ppbuf);
+    assert (pbuflen);
+    assert (pseq);
+
+    OFCondition result = EC_Normal;
+
+    size_t buflen = 0;
+
+    for (size_t i = 1; result.good () && i < pseq->card (); ++i) {
+        DcmPixelItem* pitem = 0;
+
+        if ((result = pseq->getItem (pitem, i)).good ())
+            buflen += pitem->getLength ();
+    }
+
+    if (!result.good ())
+        return 0;
+
+    assert (buflen);
+
+    char* pbuf = new char [buflen];
+    memset (pbuf, 0, buflen);
+
+    size_t pos = 0;
+
+    for (size_t i = 1; result.good () && i < pseq->card (); ++i) {
+        DcmPixelItem* pitem = 0;
+
+        if ((result = pseq->getItem (pitem, i)).good ()) {
+            size_t len = pitem->getLength ();
+
+            Uint8* parr = 0;
+            result = pitem->getUint8Array (parr);
+
+            if (result.good ()) {
+                memcpy (pbuf + pos, parr, len);
+                pos += len;
+            }
+        }
+    }
+
+    assert (!result.good () || pos == buflen);
+
+    if (!result.good ()) {
+        if (pbuf)
+            delete [] pbuf;
+
+        pbuf = 0;
+        buflen = 0;
+    }
+
+    ppbuf [0] = pbuf;
+    pbuflen [0] = buflen;
+
+    return pbuf;
+}
 
 DJCodecDecoder::DJCodecDecoder()
 : DcmCodec()
@@ -135,7 +193,7 @@ OFCondition DJCodecDecoder::decode(
           if (jpegData == NULL) result = EC_CorruptedData; // JPEG data stream is empty/absent
           else
           {
-            Uint8 precision = scanJpegDataForBitDepth(jpegData, fragmentLength);
+            Uint8 precision = isJPEG2000() ? imageBitsAllocated : scanJpegDataForBitDepth(jpegData, fragmentLength);
             if (precision == 0) result = EC_CannotChangeRepresentation; // something has gone wrong, bail out
             else
             {
@@ -169,21 +227,40 @@ OFCondition DJCodecDecoder::decode(
                     result = jpeg->init();
                     if (result.good())
                     {
-                      result = EJ_Suspension;
-                      while (EJ_Suspension == result)
-                      {
-                        result = pixSeq->getItem(pixItem, OFstatic_cast(Uint32, currentItem++));
-                        if (result.good())
-                        {
-                          fragmentLength = pixItem->getLength();
-                          result = pixItem->getUint8Array(jpegData);
-                          if (result.good())
-                          {
-                            result = jpeg->decode(jpegData, fragmentLength, imageData8, OFstatic_cast(Uint32, frameSize), isSigned);
-                          }
+
+                    result = EJ_Suspension;
+
+                    // For openjpeg, we need to pack all fragments into a single
+                    // contiguous buffer
+                    if (isJPEG2000 () && pixSeq->card () > 2) {
+                        char* pbuf = 0;
+                        size_t buflen = 0;
+
+                        if (pack_fragments (&pbuf, &buflen, pixSeq)) {
+                            result = jpeg->decode (
+                                OFreinterpret_cast (Uint8*, pbuf),
+                                buflen, imageData8, frameSize, isSigned);
+
+                            if (pbuf)
+                                delete [] pbuf;
                         }
-                      }
-                      if (result.good())
+                    }
+                    else {
+						  while (EJ_Suspension == result)
+						  {
+							result = pixSeq->getItem(pixItem, currentItem++);
+							if (result.good())
+							{
+							  fragmentLength = pixItem->getLength();
+							  result = pixItem->getUint8Array(jpegData);
+							  if (result.good())
+							  {
+								result = jpeg->decode(jpegData, fragmentLength, imageData8, frameSize, isSigned);
+							  }
+							}
+						  }
+	  				}
+                     if (result.good())
                       {
                         if (! createPlanarConfigurationInitialized)
                         {

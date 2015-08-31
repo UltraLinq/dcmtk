@@ -97,3 +97,10 @@ dcmwlm/wwwapps/preplock
 dcmwlm/wwwapps/readoviw
 dcmwlm/wwwapps/readwlst
 dcmwlm/wwwapps/writwlst
+
+GPATH
+GRTAGS
+GTAGS
+
+/build
+/third-party

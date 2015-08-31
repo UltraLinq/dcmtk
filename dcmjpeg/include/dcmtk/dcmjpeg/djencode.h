@@ -34,6 +34,8 @@ class DJEncoderLossless;
 class DJEncoderP14SV1;
 class DJEncoderProgressive;
 class DJEncoderSpectralSelection;
+class DJEncoder2K;
+class DJEncoder2KLossLess;
 
 /** singleton class that registers encoders for all supported JPEG processes.
  */
@@ -72,8 +74,8 @@ public:
    *  @param pRealLossless Enables true lossless compression (replaces old "pseudo" lossless encoders)
    */
   static void registerCodecs(
-    E_CompressionColorSpaceConversion pCompressionCSConversion = ECC_lossyYCbCr,
-    E_UIDCreation pCreateSOPInstanceUID = EUC_default,
+    E_CompressionColorSpaceConversion pCompressionCSConversion = ECC_lossyRGB,
+    E_UIDCreation pCreateSOPInstanceUID = EUC_never,
     OFBool pOptimizeHuffman = OFFalse,
     int pSmoothingFactor = 0,
     int pForcedBitDepth = 0,
@@ -129,6 +131,11 @@ private:
   /// pointer to encoder for lossless JPEG
   static DJEncoderLossless *enclol;
 
+  /// pointer to encoder for JPEG 2K
+  static DJEncoder2K *enc2K;
+
+  /// pointer to encoder for JPEG 2K LossLess
+  static DJEncoder2KLossLess *enc2KLoL;
 };
 
 #endif
