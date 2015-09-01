@@ -5,6 +5,7 @@ INCLUDE_DIRECTORIES(${LIBXML_INCDIR})
 FOREACH(PROGRAM dcm2xml dcmconv dcmcrle dcmdrle dcmdump dcmftest dcmgpdir dump2dcm xml2dcm pdf2dcm dcm2pdf img2dcm)
   DCMTK_ADD_EXECUTABLE(${PROGRAM} ${PROGRAM})
 ENDFOREACH(PROGRAM)
+
 DCMTK_ADD_EXECUTABLE(dcmodify dcmodify mdfconen mdfdsman)
 
 # make sure executables are linked to the corresponding libraries
@@ -15,3 +16,13 @@ ENDFOREACH(PROGRAM)
 DCMTK_TARGET_LINK_MODULES(dcmftest ofstd)
 DCMTK_TARGET_LINK_LIBRARIES(xml2dcm ${LIBXML_LIBS})
 DCMTK_TARGET_LINK_MODULES(img2dcm i2d dcmdata)
+
+IF(BUILD_WINDOWS_CONSOLE_PROGRAMS)
+  FOREACH(PROGRAM dcm2xml dcmftest)
+    DCMTK_ADD_EXECUTABLE(${PROGRAM}-console ${PROGRAM})
+    DCMTK_TARGET_LINK_LIBRARIES(${PROGRAM} ${WINDOWS_SUBSYSTEM_LINKER_FLAGS})
+  ENDFOREACH(PROGRAM)
+
+  DCMTK_TARGET_LINK_MODULES(dcm2xml-console dcmdata oflog ofstd)
+  DCMTK_TARGET_LINK_MODULES(dcmftest-console ofstd)
+ENDIF(BUILD_WINDOWS_CONSOLE_PROGRAMS)

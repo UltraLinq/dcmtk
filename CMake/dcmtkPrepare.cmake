@@ -62,6 +62,11 @@ SET(DCMTK_LIBRARY_PROPERTIES VERSION "${DCMTK_PACKAGE_VERSION}" SOVERSION "${DCM
 OPTION(BUILD_APPS "Build command line applications and test programs." ON)
 OPTION(BUILD_SHARED_LIBS "Build with shared libraries." OFF)
 OPTION(BUILD_SINGLE_SHARED_LIBRARY "Build a single DCMTK library." OFF)
+
+IF(WIN32)
+  OPTION(BUILD_WINDOWS_SUBSYSTEM "Build for Windows subsystem." OFF)
+ENDIF(WIN32)
+
 MARK_AS_ADVANCED(BUILD_SINGLE_SHARED_LIBRARY)
 SET(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Library postfix for debug builds. Usually left blank.")
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/${DCMTK_CMAKE_INCLUDE}/CMake/")
@@ -299,10 +304,15 @@ IF(BUILD_SHARED_LIBS)
 ENDIF(BUILD_SHARED_LIBS)
 
 IF(WIN32)   # special handling for Windows systems
-
   IF(MINGW)
     # Avoid auto-importing warnings on MinGW
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-auto-import")
+
+    IF(BUILD_WINDOWS_SUBSYSTEM)
+      SET(BUILD_WINDOWS_CONSOLE_PROGRAMS TRUE)
+      SET(WINDOWS_SUBSYSTEM_LINKER_FLAGS "-mwindows")
+    ENDIF(BUILD_WINDOWS_SUBSYSTEM)
+
   ELSE(MINGW)
     # On Visual Studio 8 MS deprecated C. This removes all 1.276E1265 security warnings.
     IF(NOT BORLAND)

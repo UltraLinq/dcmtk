@@ -10,3 +10,10 @@ ENDFOREACH(PROGRAM)
 FOREACH(PROGRAM dcmcjpeg dcmdjpeg dcmj2pnm dcmmkdir)
   DCMTK_TARGET_LINK_MODULES(${PROGRAM} dcmjpeg ijg8 ijg12 ijg16 dcmimage dcmimgle dcmdata oflog ofstd)
 ENDFOREACH(PROGRAM)
+
+IF(BUILD_WINDOWS_CONSOLE_PROGRAMS)
+  DCMTK_ADD_EXECUTABLE(dcmj2pnm-console dcmj2pnm)
+  DCMTK_TARGET_LINK_MODULES(dcmj2pnm-console dcmjpeg ijg8 ijg12 ijg16 dcmimage dcmimgle dcmdata oflog ofstd)
+  DCMTK_TARGET_LINK_LIBRARIES(dcmj2pnm ${WINDOWS_SUBSYSTEM_LINKER_FLAGS})
+ENDIF(BUILD_WINDOWS_CONSOLE_PROGRAMS)
+
