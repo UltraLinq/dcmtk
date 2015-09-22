@@ -125,7 +125,7 @@ void DJDecoderRegistration::cleanup()
 
     DcmCodecList::deregisterCodec (dec2kLossLess);
     delete dec2kLossLess;
-#endif (WITH_OPENJPEG2)
+#endif // (WITH_OPENJPEG2)
 
     delete cp;
 
@@ -144,7 +144,7 @@ void DJDecoderRegistration::cleanup()
 #  if defined (WITH_OPENJPEG2)
     dec2k = NULL;
     dec2kLossLess = NULL;
-#  endif (WITH_OPENJPEG2)
+#  endif // (WITH_OPENJPEG2)
 
 #endif
 
